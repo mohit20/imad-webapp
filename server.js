@@ -83,37 +83,59 @@ function createTemplate(data){
 	var heading = data.heading;
 	var content = data.content;
 
-	var htmlTemplate = `<html>
-	<head>
-		<title>${title}</title>
-		<meta name="viewport" content="width-device-width, initial-scale=1" charset="utf-8">
-		<link href="/ui/style.css" rel="stylesheet" />
-	</head>
-	<body>
-		<div class="container">
-			<div>
-				<a href="/">Home</a>
+	var htmlTemplate = `
+	<html>
+		<head>
+			<title>${title}</title>
+			<meta name="viewport" content="width=device-width, initial-scale=1" charset="utf-8">
+			<link href="/ui/style.css" rel="stylesheet" />
+		</head>
+		<body>
+			<div class="container">
+				<div>
+					<a href="/">Home</a>
+				</div>
+				<hr/>
+				<h3>${heading}</h3>
+				<div>
+					${date.toDateString()}
+				</div>
+				<div>
+					${content}
+				</div>
 			</div>
-			<hr/>
-			<h3>${heading}</h3>
-			<div>
-				${date}
-			</div>
-			<div>
-				${content}
-			</div>
-		</div>
-	</body>
+		</body>
 	</html>`;
 
 	return htmlTemplate;
 }
 
+var names = []
+app.get("/submit-name/", function(req,res){ //URL: /submit-name?name=ddddd
+	//Get the name from request object
+	var name = req.query.name;
+	names.push(name);
+	//JSON to send data since it will take only string
+
+	res.send(JSON.stringify(names));
+});
+
+app.get('/', function (req, res) {
+  res.sendFile(path.join(__dirname, 'ui', 'index.html'));//function to send file
+});
+
+var counter = 0;
+app.get('/counter', function(req, res){
+	counter = counter + 1;
+	res.send(counter.toString());
+});
 
 app.get('/:articleName', function (req, res) {
 	var articleName=req.params.articleName;
-    res.send(createTemplate(articles[articleName]))//function to send file
+    res.send(createTemplate(articles[articleName]));//function to send file
 });
+
+
 //article name will article-one
 //articles[articleName] == {} content object for article one
 
@@ -126,8 +148,9 @@ app.get('/article-three', function (req, res) {
   res.sendFile(path.join(__dirname, 'ui', 'article-three.html'));//function to send file
 });*/
 
-app.get('/', function (req, res) {
-  res.sendFile(path.join(__dirname, 'ui', 'index.html'));//function to send file
+
+app.get('/ui/main.js', function (req, res) {
+  res.sendFile(path.join(__dirname, 'ui', 'main.js'));//function to send file
 });
 
 app.get('/ui/style.css', function (req, res) {
