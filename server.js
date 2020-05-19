@@ -1,81 +1,18 @@
 var express = require('express'); // import spftware packeGES
 var morgan = require('morgan'); //OUTPUT LOG OF SERVER
 var path = require('path');
+var Pool = require('pg').Pool;
+var config = {
+	user:'imad',
+	database: 'test',
+	host: 'localhost',
+	port:'5432',
+	password: '12345'//process.env.DB_PASSWORD //'12345'
+}
 
 var app = express();
 app.use(morgan('combined'));
 
-var articles = {
-	'article-one' : {
-		title: 'Article One | Mohit Agarwal',
-		heading: 'Article One',
-		date: 'May 16, 2020',
-		content:`<p>
-					Long Short Term Network (LSTM) is an type of recurrent neural network, Recurrent
-					Neural Network (RNN) architecture used in the field of machine learning. While stan-
-					dard neural networks are feed-forward, LSTM has feedback connections from previous
-					layers that connects the weights and learning of previous layers to the next layer.
-				</p>
-				<p>
-					It can process multiple data points like images, and also entire sequences of data like video.
-					A common LSTM unit is composed of an input gate, a cell , an output gate and a forget
-					gate. The cell remembers data values over set time intervals and the three gates regulate
-					the flow of information in and out of the cell.
-				</p>
-				<p>
-					Financial aspects and stock costs are fundamentally dependent upon abstract recog-
-					nitions about the securities exchange. It is close difficult to foresee stock costs to the T,
-					inferable from the instability of variables that assume a noteworthy job in the develop-
-					ment of costs.
-				</p>`
-		},
-	'article-two': {
-		title: 'Article Two | Mohit Agarwal',
-		heading: 'Article Two',
-		date: 'May 18, 2020',
-		content:`<p>
-					Long Short Term Network (LSTM) is an type of recurrent neural network, Recurrent
-					Neural Network (RNN) architecture used in the field of machine learning. While stan-
-					dard neural networks are feed-forward, LSTM has feedback connections from previous
-					layers that connects the weights and learning of previous layers to the next layer.
-				</p>
-				<p>
-					It can process multiple data points like images, and also entire sequences of data like video.
-					A common LSTM unit is composed of an input gate, a cell , an output gate and a forget
-					gate. The cell remembers data values over set time intervals and the three gates regulate
-					the flow of information in and out of the cell.
-				</p>
-				<p>
-					Financial aspects and stock costs are fundamentally dependent upon abstract recog-
-					nitions about the securities exchange. It is close difficult to foresee stock costs to the T,
-					inferable from the instability of variables that assume a noteworthy job in the develop-
-					ment of costs.
-				</p>`
-		},
-	'article-three': {
-		title: 'Article Three | Mohit Agarwal',
-		heading: 'Article Three',
-		date: 'May 20, 2020',
-		content:`<p>
-					Long Short Term Network (LSTM) is an type of recurrent neural network, Recurrent
-					Neural Network (RNN) architecture used in the field of machine learning. While stan-
-					dard neural networks are feed-forward, LSTM has feedback connections from previous
-					layers that connects the weights and learning of previous layers to the next layer.
-				</p>
-				<p>
-					It can process multiple data points like images, and also entire sequences of data like video.
-					A common LSTM unit is composed of an input gate, a cell , an output gate and a forget
-					gate. The cell remembers data values over set time intervals and the three gates regulate
-					the flow of information in and out of the cell.
-				</p>
-				<p>
-					Financial aspects and stock costs are fundamentally dependent upon abstract recog-
-					nitions about the securities exchange. It is close difficult to foresee stock costs to the T,
-					inferable from the instability of variables that assume a noteworthy job in the develop-
-					ment of costs.
-				</p>`
-		}
-	}
 
 function createTemplate(data){
 	var title = data.title;
@@ -98,7 +35,7 @@ function createTemplate(data){
 				<hr/>
 				<h3>${heading}</h3>
 				<div>
-					${date.toDateString()}
+					${new Date(date).toDateString()}
 				</div>
 				<div>
 					${content}
@@ -110,19 +47,24 @@ function createTemplate(data){
 	return htmlTemplate;
 }
 
-var names = []
-app.get("/submit-name/", function(req,res){ //URL: /submit-name?name=ddddd
-	//Get the name from request object
-	var name = req.query.name;
-	names.push(name);
-	//JSON to send data since it will take only string
-
-	res.send(JSON.stringify(names));
-});
-
 app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'ui', 'index.html'));//function to send file
 });
+
+
+var pool = new Pool(config);
+app.get('/test-db', function(req, res){
+	//make a request
+	//return a response
+	pool.query('SELECT * from test', function(err,result){
+		if(err)
+			res.status(500).send(err.toString());
+		else
+			res.send(JSON.stringify(result.rows));
+	});
+	
+});
+
 
 var counter = 0;
 app.get('/counter', function(req, res){
@@ -130,24 +72,28 @@ app.get('/counter', function(req, res){
 	res.send(counter.toString());
 });
 
-app.get('/:articleName', function (req, res) {
+app.get('/articles/:articleName', function (req, res) {
+	//var articleName=req.params.articleName;
+	pool.query("SELECT * from article where title = $1", [req.params.articleName], function(err, result){ //parameterization to protect from sql injection
+		if (err){
+			res.status(500).send(err.toString());
+		}
+		else{
+			if (result.rows.length === 0){
+				res.status(404).send('Article not Found');
+			}
+			else{
+				var articleData = result.rows[0];
+				res.send(createTemplate(articleData));
+			}
+		}
+	});
+});
+
+/*app.get('/:articleName', function (req, res) {
 	var articleName=req.params.articleName;
     res.send(createTemplate(articles[articleName]));//function to send file
-});
-
-
-//article name will article-one
-//articles[articleName] == {} content object for article one
-
-
-/*app.get('/article-two', function (req, res) {
-  res.sendFile(path.join(__dirname, 'ui', 'article-two.html'));//function to send file
-});
-
-app.get('/article-three', function (req, res) {
-  res.sendFile(path.join(__dirname, 'ui', 'article-three.html'));//function to send file
 });*/
-
 
 app.get('/ui/main.js', function (req, res) {
   res.sendFile(path.join(__dirname, 'ui', 'main.js'));//function to send file
@@ -162,10 +108,35 @@ app.get('/ui/madi.png', function (req, res) {
 });
 
 
+
+var names = []
+app.get("/submit-name/", function(req,res){ //URL: /submit-name?name=ddddd
+	//Get the name from request object
+	var name = req.query.name;
+	names.push(name);
+	//JSON to send data since it will take only string
+
+	res.send(JSON.stringify(names));
+});
+
+//article name will article-one
+//articles[articleName] == {} content object for article one
+
+
+/*app.get('/article-two', function (req, res) {
+  res.sendFile(path.join(__dirname, 'ui', 'article-two.html'));//function to send file
+});
+
+app.get('/article-three', function (req, res) {
+  res.sendFile(path.join(__dirname, 'ui', 'article-three.html'));//function to send file
+});*/
+
+
+
 // Do not change port, otherwise your app won't run on IMAD servers
 // Use 8080 only for local development if you already have apache running on 80
 
-var port = 80;
+var port = 8080;
 app.listen(port, function () {
   console.log(`IMAD course app listening on port ${port}!`);
 });
