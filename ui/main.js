@@ -1,6 +1,6 @@
 console.log('Loaded!');
 
-//Change text of an element
+/*//Change text of an element
 
 var button = document.getElementById('counter');
 button.onclick = function(){
@@ -23,7 +23,7 @@ button.onclick = function(){
 	request.send(null);
 };
 
-//Submit name
+*/
 
 var submit = document.getElementById("submit_btn");
 submit.onclick = function(){
@@ -33,7 +33,41 @@ submit.onclick = function(){
 	var request = new XMLHttpRequest();
 	//Capture the respo nseand store it in a variable
 	request.onreadystatechange = function(){
-		if(request.readyState = XMLHttpRequest.DONE){
+		if(request.readyState === XMLHttpRequest.DONE){
+			if(request.status === 200){
+				alert('user logged in succesfully');
+			} else if(request.status === 403){
+				//console.log('Username/Password is incorrect');
+				alert('Username/Password is incorrect');
+			}
+			else if(request.status === 500){
+				alert('Internal Server error');
+			}
+		}
+	};
+	var username = document.getElementById("username").value;
+	var password = document.getElementById("password").value;
+	console.log(username);
+	console.log(password);
+	request.open('POST', 'http://127.0.0.1:8080/login', true);
+	request.setRequestHeader('Content-Type', 'application/json');
+	request.send(JSON.stringify({"username":username,"password":password}));	
+};
+
+
+
+
+/*//Submit name
+
+var submit = document.getElementById("submit_btn");
+submit.onclick = function(){
+	//Make a request to the server and send the name
+	//Capture a list of names and render it as a list
+
+	var request = new XMLHttpRequest();
+	//Capture the respo nseand store it in a variable
+	request.onreadystatechange = function(){
+		if(request.readyState === XMLHttpRequest.DONE){
 			if(request.status === 200){
 				var names = request.responseText;
 				names = JSON.parse(names);
@@ -51,6 +85,8 @@ submit.onclick = function(){
 	request.open('GET', 'http://127.0.0.1/submit-name?name=' + name, true);
 	request.send(null);	
 };
+
+*/
 
 
 
